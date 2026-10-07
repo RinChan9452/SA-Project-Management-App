@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Assign Engineers')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container mb-5" th:with="project=${page.project}">
+    <p class="text-muted mb-1">Project #<span th:text="${project.id}">1</span> · <span th:text="${project.customerName}">Customer</span></p>
+    <h1 class="h3 mb-1">Assign Engineers: <span th:text="${project.projectName}">Project</span></h1>
+    <p class="text-muted">Choose the Tech Engineers for this project. Saving makes you the Project Manager in charge
+        and moves the project to <strong>Working</strong>. Each new engineer gets a notification.</p>
+
+    <div th:unless="${page.anyEngineer}" class="alert alert-warning">
+        No Tech Engineer is registered yet. Ask the engineers to register before assigning.
+    </div>
+
+    <!-- Engineers kept from an earlier round (project came back after an approved requirement) -->
+    <div th:unless="${#lists.isEmpty(page.alreadyAssigned)}" class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">Already assigned</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex align-items-center gap-3" th:each="pe : ${page.alreadyAssigned}">
+                <i th:replace="~{fragments/layout :: avatar(${pe.employee})}"></i>
+                <div>
+                    <div class="fw-semibold" th:text="${pe.employee.name}">Name</div>
+                    <span class="badge text-bg-light border me-1" th:each="s : ${pe.employee.skills}" th:text="${s.skill}">CCNA</span>
+                </div>
+            </li>
+        </ul>
+        <div class="card-footer small text-muted">These engineers stay on the project. You can add more below, or just confirm.</div>
+    </div>
+
+    <!-- Skill filter (GET). assign.js submits it on change and carries the ticked engineers along. -->
+    <form id="filterForm" th:action="@{/projects/{id}/assign(id=${project.id})}" method="get"
+          class="row g-2 align-items-end mb-3">
+        <div class="col-sm-6 col-md-4">
+            <label for="skillFilter" class="form-label">Filter by skill</label>
+            <select id="skillFilter" name="skill" class="form-select">
+                <option value="">All skills</option>
+                <option th:each="s : ${page.skills}" th:value="${s}" th:text="${s}"
+                        th:selected="${form.skill != null and #strings.equalsIgnoreCase(s, form.skill)}">CCNA</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-funnel"></i> Filter</button>
+        </div>
+    </form>
+
+    <form id="assignForm" th:action="@{/projects/{id}/assign(id=${project.id})}" th:object="${form}" method="post">
+        <input type="hidden" th:field="*{skill}">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold d-flex justify-content-between">
+                <span>Tech Engineers</span>
+                <span class="text-muted fw-normal">Selected: <span id="selectedCount">0</span></span>
+            </div>
+            <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger m-3 mb-0">
+                <div th:each="err : ${#fields.errors('*')}" th:text="${err}">Please select at least one engineer</div>
+            </div>
+            <p th:if="${page.anyEngineer and #lists.isEmpty(page.engineers)}" class="text-muted p-3 mb-0">
+                <span th:if="${#strings.isEmpty(form.skill)}">Every Tech Engineer is already on this project.</span>
+                <span th:unless="${#strings.isEmpty(form.skill)}">No other engineer has the skill
+                    <strong th:text="${form.skill}">CCNA</strong>.</span>
+            </p>
+            <div th:unless="${#lists.isEmpty(page.engineers)}" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr><th style="width: 3rem"></th><th>Engineer</th><th>Skills</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="e : ${page.engineers}">
+                        <td class="text-center">
+                            <input type="checkbox" class="form-check-input" th:field="*{engineerIds}" th:value="${e.id}">
+                        </td>
+                        <td>
+                            <label class="d-flex align-items-center gap-2 mb-0" th:for="${#ids.prev('engineerIds')}">
+                                <i th:replace="~{fragments/layout :: avatar(${e})}"></i>
+                                <span>
+                                    <span class="fw-semibold d-block" th:text="${e.name}">Name</span>
+                                    <small class="text-muted" th:text="${e.email}">email</small>
+                                </span>
+                            </label>
+                        </td>
+                        <td>
+                            <span class="badge me-1 mb-1" th:each="s : ${e.skills}" th:text="${s.skill}"
+                                  th:classappend="${form.skill != null and #strings.equalsIgnoreCase(s.skill, form.skill)} ? 'text-bg-primary' : 'text-bg-light border'">CCNA</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" th:disabled="${!page.anyEngineer}">
+                <i class="bi bi-person-check"></i>
+                <span th:text="${#lists.isEmpty(page.alreadyAssigned)} ? 'Assign Selected Engineers' : 'Save Engineers'">Assign</span>
+            </button>
+            <a th:href="@{/projects/{id}(id=${project.id})}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:src="@{/js/assign.js}"></script>
+</body>
+</html>

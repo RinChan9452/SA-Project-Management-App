@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Add Requirement')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container mb-5">
+    <p class="text-muted mb-1">Project #<span th:text="${project.id}">1</span> · <span th:text="${project.customerName}">Customer</span></p>
+    <h1 class="h3 mb-1">Add Customer Requirement: <span th:text="${project.projectName}">Project</span></h1>
+    <p class="text-muted">Fields marked <span class="text-danger">*</span> are required. Saving moves the project to
+        <strong>Waiting for Approval</strong> and sends the requirement to the Sale in charge
+        (<span th:text="${project.sale.name}">Sale</span>) to approve or reject.</p>
+
+    <div class="row g-4">
+        <div class="col-lg-8 order-2 order-lg-1">
+            <form th:action="@{/projects/{id}/requirements(id=${project.id})}" th:object="${form}" method="post"
+                  enctype="multipart/form-data" novalidate>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header fw-semibold">New requirement</div>
+                    <div class="card-body row g-3">
+                        <div class="col-12">
+                            <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" th:field="*{title}" class="form-control" th:errorclass="is-invalid" maxlength="200">
+                            <div class="invalid-feedback" th:errors="*{title}"></div>
+                        </div>
+                        <div class="col-12">
+                            <label for="detail" class="form-label">Detail <span class="text-danger">*</span></label>
+                            <textarea th:field="*{detail}" class="form-control" th:errorclass="is-invalid" rows="5"
+                                      maxlength="4000" placeholder="What the customer wants changed or added, and why"></textarea>
+                            <div class="invalid-feedback" th:errors="*{detail}"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="priority" class="form-label">Priority <span class="text-danger">*</span></label>
+                            <select th:field="*{priority}" class="form-select" th:errorclass="is-invalid">
+                                <option value="">Choose...</option>
+                                <option th:each="p : ${priorities}" th:value="${p}" th:text="${p.label}">Medium</option>
+                            </select>
+                            <div class="invalid-feedback" th:errors="*{priority}"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="dueDate" class="form-label">Customer Due Date <span class="text-danger">*</span></label>
+                            <input type="date" th:field="*{dueDate}" class="form-control" th:errorclass="is-invalid"
+                                   th:min="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}">
+                            <div class="invalid-feedback" th:errors="*{dueDate}"></div>
+                            <div class="form-text">Today or later.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="relatedFeature" class="form-label">Related Feature</label>
+                            <input type="text" th:field="*{relatedFeature}" class="form-control" th:errorclass="is-invalid"
+                                   maxlength="200" placeholder="Optional">
+                            <div class="invalid-feedback" th:errors="*{relatedFeature}"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header fw-semibold">Attachments (optional · PDF, JPG or PNG · max 50 MB each)</div>
+                    <div class="card-body">
+                        <input type="file" id="attachments" name="attachments" multiple
+                               accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
+                               class="form-control" th:classappend="${#fields.hasErrors('attachments')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{attachments}"></div>
+                        <div class="form-text">You can select several files at once (together at most 110 MB). They become visible to everyone after the Sale approves the requirement.</div>
+                        <div class="alert alert-warning mt-3 mb-0 py-2 small" th:if="${#fields.hasAnyErrors()}">
+                            If there were errors, please choose the attachments again before saving.</div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> Send for Approval</button>
+                    <a th:href="@{/projects/{id}(id=${project.id})}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- UC06 step 3: project details and earlier requirements -->
+        <div class="col-lg-4 order-1 order-lg-2">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header fw-semibold">Project</div>
+                <div class="card-body">
+                    <dl class="mb-0">
+                        <dt>Status</dt>
+                        <dd><span th:replace="~{fragments/layout :: status(${project.status})}"></span></dd>
+                        <dt>Project Manager</dt>
+                        <dd th:text="${project.pm.name}">PM</dd>
+                        <dt>Period</dt>
+                        <dd th:text="${project.startDate != null} ? ${#temporals.format(project.startDate, 'dd MMM yyyy') + ' – ' + #temporals.format(project.endDate, 'dd MMM yyyy')} : '-'">dates</dd>
+                        <dt>Customer test</dt>
+                        <dd th:text="${testAt != null} ? ${#temporals.format(testAt, 'dd MMM yyyy HH:mm')} : '-'">date</dd>
+                        <dt>Engineers</dt>
+                        <dd><span th:each="pe, it : ${engineers}" th:text="${pe.employee.name} + (${it.last} ? '' : ', ')">Name</span></dd>
+                        <dt>Objective</dt>
+                        <dd class="mb-0 text-prewrap" th:text="${project.objective}">objective</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold">Earlier requirements</div>
+                <div class="card-body p-0">
+                    <p th:if="${#lists.isEmpty(requirements)}" class="text-muted p-3 mb-0">None yet.</p>
+                    <ul th:unless="${#lists.isEmpty(requirements)}" class="list-group list-group-flush">
+                        <li th:each="r : ${requirements}" class="list-group-item">
+                            <div class="d-flex justify-content-between gap-2">
+                                <span class="fw-semibold" th:text="${r.title}">Title</span>
+                                <span th:replace="~{fragments/layout :: requirementStatus(${r.status})}"></span>
+                            </div>
+                            <small class="text-muted" th:text="${#temporals.format(r.createdAt, 'dd MMM yyyy')}">date</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

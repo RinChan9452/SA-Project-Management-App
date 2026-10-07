@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${project.projectName})}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container mb-5">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+        <div>
+            <p class="text-muted mb-1">Project #<span th:text="${project.id}">1</span></p>
+            <h1 class="h3 mb-1" th:text="${project.projectName}">Project</h1>
+            <span th:replace="~{fragments/layout :: status(${project.status})}"></span>
+        </div>
+        <div class="d-flex gap-2">
+            <a th:if="${canStoreSolution}" th:href="@{/projects/{id}/solution(id=${project.id})}" class="btn btn-primary">
+                <i class="bi bi-file-earmark-arrow-up"></i> Add Solution
+            </a>
+            <a th:if="${canAssignEngineers}" th:href="@{/projects/{id}/assign(id=${project.id})}" class="btn btn-primary">
+                <i class="bi bi-person-plus"></i> Assign Engineers
+            </a>
+            <a th:if="${canSetTestDate}" th:href="@{/projects/{id}/test-schedule(id=${project.id})}" class="btn btn-primary">
+                <i class="bi bi-calendar-plus"></i> Set Test Date
+            </a>
+            <a th:if="${canAddRequirement}" th:href="@{/projects/{id}/requirements/new(id=${project.id})}" class="btn btn-primary">
+                <i class="bi bi-plus-square"></i> Add Requirement
+            </a>
+            <a th:if="${toDecide}" th:href="@{/requirements/{id}/decision(id=${toDecide.id})}" class="btn btn-primary">
+                <i class="bi bi-check2-square"></i> Review Requirement
+            </a>
+            <button th:if="${canComplete}" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#completeModal">
+                <i class="bi bi-flag"></i> Complete Project
+            </button>
+            <a th:href="@{/projects}" class="btn btn-outline-secondary">All projects</a>
+        </div>
+    </div>
+    <p th:if="${completeFrom}" class="text-muted small">
+        <i class="bi bi-info-circle"></i> <em>Complete Project</em> is available from
+        <strong th:text="${#temporals.format(completeFrom, 'dd MMM yyyy HH:mm')}">date</strong>, one week after the customer
+        test, if the customer has no new requirement by then.
+    </p>
+
+    <!-- Complete Project: the PM confirms before the project is Finished (read-only from then on) -->
+    <div th:if="${canComplete}" class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" th:action="@{/projects/{id}/complete(id=${project.id})}" method="post">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="completeModalTitle">Complete Project</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Mark <strong th:text="${project.projectName}">Project</strong> as <strong>Finished</strong>?</p>
+                    <p class="mb-0 text-muted">Do this after UAT and handover. A finished project can no longer be changed.
+                        The Sale, the Presale Engineer and the assigned engineers will be notified.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-flag"></i> Complete Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-semibold">People in charge</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Sale in Charge</dt>
+                        <dd class="col-sm-7"><span th:text="${project.sale.name}">Sale</span><br>
+                            <small class="text-muted" th:text="${project.sale.email}">email</small></dd>
+                        <dt class="col-sm-5">Presale in Charge</dt>
+                        <dd class="col-sm-7"><span th:text="${project.presale.name}">Presale</span><br>
+                            <small class="text-muted" th:text="${project.presale.email}">email</small></dd>
+                        <dt class="col-sm-5">Project Manager</dt>
+                        <dd class="col-sm-7 mb-0" th:text="${project.pm != null} ? ${project.pm.name} : 'Not assigned yet'">PM</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-semibold">Customer &amp; Project Site</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Customer</dt>
+                        <dd class="col-sm-8" th:text="${project.customerName}">Customer</dd>
+                        <dt class="col-sm-4">Email</dt>
+                        <dd class="col-sm-8"><a th:href="'mailto:' + ${project.customerEmail}" th:text="${project.customerEmail}">email</a></dd>
+                        <dt class="col-sm-4">Project Site</dt>
+                        <dd class="col-sm-8 mb-0">
+                            <span th:text="${project.buildingNo}">1</span>
+                            <span th:if="${project.villageNo}" th:text="', Village No. ' + ${project.villageNo}"></span>
+                            <span th:if="${project.alley}" th:text="', Alley ' + ${project.alley}"></span>
+                            <span th:if="${project.soi}" th:text="', Soi ' + ${project.soi}"></span>
+                            <span th:if="${project.street}" th:text="', ' + ${project.street} + ' Rd.'"></span><br>
+                            <span th:text="${project.subdistrict + ', ' + project.district}">Subdistrict, District</span><br>
+                            <span th:text="${project.province + ' ' + project.zipcode}">Province 10000</span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold">Solution</div>
+                <div class="card-body">
+                    <p th:if="${project.objective == null}" class="text-muted mb-0">
+                        The Presale Engineer in charge has not stored the solution yet.
+                    </p>
+                    <dl th:unless="${project.objective == null}" class="row mb-0">
+                        <dt class="col-sm-3">Period</dt>
+                        <dd class="col-sm-9" th:text="${#temporals.format(project.startDate, 'dd MMM yyyy') + ' – ' + #temporals.format(project.endDate, 'dd MMM yyyy')}">dates</dd>
+                        <dt class="col-sm-3">Estimated Budget</dt>
+                        <dd class="col-sm-9" th:text="${#numbers.formatDecimal(project.estBudget, 1, 'COMMA', 2, 'POINT')}">0.00</dd>
+                        <dt class="col-sm-3">Objective</dt>
+                        <dd class="col-sm-9 mb-0 text-prewrap" th:text="${project.objective}">objective</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold">Assigned Engineers</div>
+                <div class="card-body p-0">
+                    <p th:if="${#lists.isEmpty(engineers)}" class="text-muted p-3 mb-0">No engineers assigned yet.</p>
+                    <div th:unless="${#lists.isEmpty(engineers)}" class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light"><tr><th>Engineer</th><th>Skills</th><th>Assigned by</th><th>Assigned</th></tr></thead>
+                            <tbody>
+                            <tr th:each="pe : ${engineers}">
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i th:replace="~{fragments/layout :: avatar(${pe.employee})}"></i>
+                                        <span>
+                                            <span class="d-block" th:text="${pe.employee.name}">Name</span>
+                                            <small class="text-muted" th:text="${pe.employee.email}">email</small>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td><span class="badge text-bg-light border me-1" th:each="s : ${pe.employee.skills}" th:text="${s.skill}">CCNA</span></td>
+                                <td th:text="${pe.assignedBy.name}">PM</td>
+                                <td th:text="${#temporals.format(pe.assignedAt, 'dd MMM yyyy HH:mm')}">date</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold">Test Schedule</div>
+                <div class="card-body p-0">
+                    <p th:if="${#lists.isEmpty(testSchedules)}" class="text-muted p-3 mb-0">No customer test date set yet.</p>
+                    <div th:unless="${#lists.isEmpty(testSchedules)}" class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light"><tr><th>Test date</th><th>Details</th><th>Set by</th><th>Set</th></tr></thead>
+                            <tbody>
+                            <tr th:each="t, it : ${testSchedules}" th:classappend="${!it.first} ? 'text-muted'">
+                                <td class="text-nowrap">
+                                    <span th:class="${it.first} ? 'fw-semibold'" th:text="${#temporals.format(t.testAt, 'dd MMM yyyy HH:mm')}">date</span>
+                                    <span th:if="${it.first and t.testAt.isAfter(#temporals.createNow())}" class="badge text-bg-info ms-1">Upcoming</span>
+                                </td>
+                                <td class="text-prewrap" th:text="${t.detail}">details</td>
+                                <td th:text="${t.createdBy.name}">Engineer</td>
+                                <td class="text-nowrap" th:text="${#temporals.format(t.createdAt, 'dd MMM yyyy HH:mm')}">date</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold">Customer Requirements</div>
+                <div class="card-body p-0">
+                    <p th:if="${#lists.isEmpty(requirements)}" class="text-muted p-3 mb-0">No new requirements.</p>
+                    <div th:unless="${#lists.isEmpty(requirements)}" class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light"><tr><th>Requirement</th><th>Priority</th><th>Due</th><th>Status</th><th>Added</th><th>Attachments</th></tr></thead>
+                            <tbody>
+                            <tr th:each="r : ${requirements}">
+                                <td style="min-width: 16rem">
+                                    <span class="fw-semibold d-block" th:text="${r.title}">Title</span>
+                                    <small class="d-block text-prewrap" th:text="${r.detail}">detail</small>
+                                    <small th:if="${r.relatedFeature}" class="text-muted d-block" th:text="'Related feature: ' + ${r.relatedFeature}">feature</small>
+                                    <small th:if="${r.rejectReason}" class="text-danger d-block" th:text="'Reject reason: ' + ${r.rejectReason}">reason</small>
+                                </td>
+                                <td><span th:replace="~{fragments/layout :: priority(${r.priority})}"></span></td>
+                                <td class="text-nowrap" th:text="${#temporals.format(r.dueDate, 'dd MMM yyyy')}">date</td>
+                                <td class="text-nowrap">
+                                    <span th:replace="~{fragments/layout :: requirementStatus(${r.status})}"></span>
+                                    <a th:if="${toDecide != null and toDecide.id == r.id}" th:href="@{/requirements/{id}/decision(id=${r.id})}"
+                                       class="btn btn-sm btn-outline-primary d-block mt-1">Review</a>
+                                    <small th:if="${r.decidedBy}" class="text-muted d-block"
+                                           th:text="${r.decidedBy.name} + ', ' + ${#temporals.format(r.decidedAt, 'dd MMM yyyy HH:mm')}">by</small>
+                                </td>
+                                <td class="text-nowrap"><span th:text="${r.createdBy.name}">PM</span><br>
+                                    <small class="text-muted" th:text="${#temporals.format(r.createdAt, 'dd MMM yyyy HH:mm')}">date</small></td>
+                                <td>
+                                    <th:block th:with="files=${attachments.get(r.id)}">
+                                        <span th:if="${files == null}" class="text-muted">-</span>
+                                        <th:block th:if="${files != null and openAttachments.contains(r.id)}">
+                                            <a th:each="d : ${files}" th:href="@{/documents/{id}(id=${d.id})}" class="d-block text-nowrap">
+                                                <i class="bi" th:classappend="${d.mime == 'application/pdf'} ? 'bi-file-earmark-pdf text-danger' : 'bi-file-earmark-image text-primary'"></i>
+                                                <span th:text="${d.originalName}">file.pdf</span></a>
+                                        </th:block>
+                                        <small th:if="${files != null and !openAttachments.contains(r.id)}" class="text-muted"
+                                               th:text="${#lists.size(files)} + (${r.status.name() == 'REJECTED'}
+                                                        ? ' file(s), not shared (requirement rejected)'
+                                                        : ' file(s), shown after approval')">2 files</small>
+                                    </th:block>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold">Documents</div>
+                <div class="card-body p-0">
+                    <p th:if="${#lists.isEmpty(documents)}" class="text-muted p-3 mb-0">No documents yet.</p>
+                    <div th:unless="${#lists.isEmpty(documents)}" class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light"><tr><th>Type</th><th>File</th><th>Uploaded by</th><th>Uploaded</th><th></th></tr></thead>
+                            <tbody>
+                            <tr th:each="d : ${documents}">
+                                <td>
+                                    <span th:text="${d.type.label}">Solution</span>
+                                    <small th:if="${d.requirement}" class="text-muted d-block" th:text="${d.requirement.title}">requirement</small>
+                                </td>
+                                <td><i class="bi" th:classappend="${d.mime == 'application/pdf'} ? 'bi-file-earmark-pdf text-danger' : 'bi-file-earmark-image text-primary'"></i>
+                                    <span th:text="${d.originalName}">file.pdf</span></td>
+                                <td th:text="${d.uploadedBy.name}">Name</td>
+                                <td th:text="${#temporals.format(d.uploadedAt, 'dd MMM yyyy HH:mm')}">date</td>
+                                <td class="text-end">
+                                    <a th:href="@{/documents/{id}(id=${d.id})}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

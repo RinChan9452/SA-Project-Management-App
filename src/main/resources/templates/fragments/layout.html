@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' · Project Management Program'">Project Management Program</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/dist/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+
+<body>
+
+<nav th:fragment="navbar" class="navbar navbar-expand-md navbar-dark bg-primary mb-4">
+    <div class="container">
+        <a class="navbar-brand fw-semibold" th:href="@{/dashboard}">
+            <i class="bi bi-kanban"></i> Project Management
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/dashboard}">Dashboard</a></li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link" th:href="@{/projects}">Projects</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('SALE')">
+                    <a class="nav-link" th:href="@{/projects/new}">Create Project</a>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center gap-3 text-white" sec:authorize="isAuthenticated()">
+                <!-- F2: bell with my unread count (unreadCount comes from NotificationBellAdvice) -->
+                <a th:href="@{/notifications}" class="position-relative text-white text-decoration-none fs-5 lh-1"
+                   th:title="${unreadCount != null and unreadCount > 0} ? ${unreadCount} + ' unread notifications' : 'Notifications'"
+                   th:aria-label="${unreadCount != null and unreadCount > 0} ? ${unreadCount} + ' unread notifications' : 'Notifications'">
+                    <i class="bi" th:classappend="${unreadCount != null and unreadCount > 0} ? 'bi-bell-fill' : 'bi-bell'"></i>
+                    <span th:if="${unreadCount != null and unreadCount > 0}" id="unreadBadge"
+                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge"
+                          th:text="${unreadCount > 99} ? '99+' : ${unreadCount}">1</span>
+                </a>
+                <a th:href="@{/profile}" class="d-flex align-items-center gap-2 text-white text-decoration-none"
+                   title="My profile" th:with="me=${#authentication.principal}">
+                    <img th:if="${me.profilePicturePath != null}" class="avatar-img avatar-nav rounded-circle" alt=""
+                         th:src="@{/employees/{id}/avatar(id=${me.id},v=${#strings.substringAfter(me.profilePicturePath, '/')})}">
+                    <i th:unless="${me.profilePicturePath != null}" class="bi bi-person-circle fs-5"></i>
+                    <span th:text="${me.name}">Name</span>
+                    <span class="badge bg-light text-primary" th:text="${me.role.label}">Role</span>
+                </a>
+                <form th:action="@{/logout}" method="post" class="m-0">
+                    <button type="submit" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-box-arrow-right"></i> Log out
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Coloured badge for a ProjectStatus -->
+<span th:fragment="status(s)" class="badge"
+      th:classappend="${s.name() == 'NEW_PROJECT'} ? 'text-bg-secondary'
+                    : (${s.name() == 'WAITING_FOR_ASSIGN_ENGINEER'} ? 'text-bg-info'
+                    : (${s.name() == 'WORKING'} ? 'text-bg-primary'
+                    : (${s.name() == 'TESTING'} ? 'text-bg-warning'
+                    : (${s.name() == 'WAITING_FOR_APPROVE'} ? 'text-bg-danger' : 'text-bg-success'))))"
+      th:text="${s.label}">Status</span>
+
+<!-- Coloured badge for a requirement Priority -->
+<span th:fragment="priority(p)" class="badge"
+      th:classappend="${p.name() == 'HIGH'} ? 'text-bg-danger' : (${p.name() == 'MEDIUM'} ? 'text-bg-warning' : 'text-bg-secondary')"
+      th:text="${p.label}">Priority</span>
+
+<!-- Coloured badge for a RequirementStatus -->
+<span th:fragment="requirementStatus(s)" class="badge"
+      th:classappend="${s.name() == 'PENDING'} ? 'text-bg-warning' : (${s.name() == 'APPROVED'} ? 'text-bg-success' : 'text-bg-danger')"
+      th:text="${s.label}">Status</span>
+
+<!-- Profile picture of an employee (F4), or the default avatar when there is none.
+     Takes an Employee or the logged-in CurrentUser. ?v= changes with every new picture, so caching is safe. -->
+<th:block th:fragment="avatar(employee)">
+    <img th:if="${employee.profilePicturePath != null}" class="avatar-img rounded-circle" alt=""
+         th:src="@{/employees/{id}/avatar(id=${employee.id},v=${#strings.substringAfter(employee.profilePicturePath, '/')})}"
+         th:title="${employee.name}">
+    <i th:unless="${employee.profilePicturePath != null}" class="bi bi-person-circle avatar text-secondary"
+       th:title="${employee.name}" aria-hidden="true"></i>
+</th:block>
+
+<!-- One notification (F2) inside a .list-group. Clicking it marks it read and opens its project (POST, so CSRF-protected). -->
+<form th:fragment="notification(n)" th:action="@{/notifications/{id}/open(id=${n.id})}" method="post"
+      class="list-group-item list-group-item-action p-0" th:classappend="${!n.read} ? 'notification-unread'">
+    <button type="submit" class="btn w-100 text-start d-flex gap-3 align-items-start px-3 py-2 border-0 rounded-0">
+        <i class="bi fs-5 text-primary" th:classappend="${n.type.icon}" aria-hidden="true"></i>
+        <span class="flex-grow-1">
+            <span class="d-flex flex-wrap justify-content-between column-gap-2">
+                <span class="fw-semibold" th:text="${n.type.label}">Type</span>
+                <small class="text-muted text-nowrap" th:text="${#temporals.format(n.sendAt, 'dd MMM yyyy HH:mm')}">date</small>
+            </span>
+            <span class="d-block small text-prewrap" th:text="${n.message}">Message</span>
+        </span>
+        <span th:unless="${n.read}" class="badge text-bg-primary">New</span>
+    </button>
+</form>
+
+<!-- One-time messages after a redirect (RedirectAttributes.addFlashAttribute) -->
+<div th:fragment="flash">
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${success}">Saved.</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${error}">Error.</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+
+<th:block th:fragment="scripts">
+    <script th:src="@{/webjars/bootstrap/dist/js/bootstrap.bundle.min.js}"></script>
+</th:block>
+
+</body>
+</html>

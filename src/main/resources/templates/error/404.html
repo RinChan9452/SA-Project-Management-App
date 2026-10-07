@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Not found')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container">
+    <div class="card shadow-sm mx-auto" style="max-width: 560px">
+        <div class="card-body p-4 text-center">
+            <i class="bi bi-question-circle text-secondary display-5"></i>
+            <h1 class="h4 mt-2">Page not found</h1>
+            <p class="text-muted">The page or project you are looking for does not exist.</p>
+            <a th:href="@{/dashboard}" class="btn btn-primary">Back to dashboard</a>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

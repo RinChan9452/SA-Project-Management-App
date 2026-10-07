@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Create Project')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container mb-5">
+    <h1 class="h3 mb-1">Create Project Profile</h1>
+    <p class="text-muted">Fields marked <span class="text-danger">*</span> are required.</p>
+
+    <div th:if="${#lists.isEmpty(presales)}" class="alert alert-warning">
+        No Presale Engineer is registered yet. Ask a Presale Engineer to register before creating a project.
+    </div>
+
+    <form th:action="@{/projects}" th:object="${form}" method="post" novalidate>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">Project</div>
+            <div class="card-body row g-3">
+                <div class="col-12">
+                    <label for="projectName" class="form-label">Project Name <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{projectName}" class="form-control" th:errorclass="is-invalid" maxlength="200">
+                    <div class="invalid-feedback" th:errors="*{projectName}"></div>
+                </div>
+                <div class="col-md-6">
+                    <label for="saleId" class="form-label">Sale in Charge <span class="text-danger">*</span></label>
+                    <select th:field="*{saleId}" class="form-select" th:errorclass="is-invalid">
+                        <option value="">-- Choose --</option>
+                        <option th:each="e : ${sales}" th:value="${e.id}" th:text="${e.name + ' (' + e.email + ')'}">Sale</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{saleId}"></div>
+                </div>
+                <div class="col-md-6">
+                    <label for="presaleId" class="form-label">Presale Engineer in Charge <span class="text-danger">*</span></label>
+                    <select th:field="*{presaleId}" class="form-select" th:errorclass="is-invalid">
+                        <option value="">-- Choose --</option>
+                        <option th:each="e : ${presales}" th:value="${e.id}" th:text="${e.name + ' (' + e.email + ')'}">Presale</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{presaleId}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">Customer</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label for="customerName" class="form-label">Customer Name <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{customerName}" class="form-control" th:errorclass="is-invalid" maxlength="200">
+                    <div class="invalid-feedback" th:errors="*{customerName}"></div>
+                </div>
+                <div class="col-md-6">
+                    <label for="customerEmail" class="form-label">Customer Email <span class="text-danger">*</span></label>
+                    <input type="email" th:field="*{customerEmail}" class="form-control" th:errorclass="is-invalid" maxlength="255">
+                    <div class="invalid-feedback" th:errors="*{customerEmail}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">Project Site</div>
+            <div class="card-body row g-3">
+                <div class="col-md-3">
+                    <label for="buildingNo" class="form-label">Building No. <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{buildingNo}" class="form-control" th:errorclass="is-invalid" maxlength="50">
+                    <div class="invalid-feedback" th:errors="*{buildingNo}"></div>
+                </div>
+                <div class="col-md-3">
+                    <label for="villageNo" class="form-label">Village No.</label>
+                    <input type="text" th:field="*{villageNo}" class="form-control" th:errorclass="is-invalid" maxlength="50">
+                    <div class="invalid-feedback" th:errors="*{villageNo}"></div>
+                </div>
+                <div class="col-md-3">
+                    <label for="alley" class="form-label">Alley</label>
+                    <input type="text" th:field="*{alley}" class="form-control" th:errorclass="is-invalid" maxlength="100">
+                    <div class="invalid-feedback" th:errors="*{alley}"></div>
+                </div>
+                <div class="col-md-3">
+                    <label for="soi" class="form-label">Soi</label>
+                    <input type="text" th:field="*{soi}" class="form-control" th:errorclass="is-invalid" maxlength="100">
+                    <div class="invalid-feedback" th:errors="*{soi}"></div>
+                </div>
+                <div class="col-md-6">
+                    <label for="street" class="form-label">Street</label>
+                    <input type="text" th:field="*{street}" class="form-control" th:errorclass="is-invalid" maxlength="100">
+                    <div class="invalid-feedback" th:errors="*{street}"></div>
+                </div>
+                <div class="col-md-6">
+                    <label for="subdistrict" class="form-label">Subdistrict <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{subdistrict}" class="form-control" th:errorclass="is-invalid" maxlength="100">
+                    <div class="invalid-feedback" th:errors="*{subdistrict}"></div>
+                </div>
+                <div class="col-md-5">
+                    <label for="district" class="form-label">District <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{district}" class="form-control" th:errorclass="is-invalid" maxlength="100">
+                    <div class="invalid-feedback" th:errors="*{district}"></div>
+                </div>
+                <div class="col-md-5">
+                    <label for="province" class="form-label">Province <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{province}" class="form-control" th:errorclass="is-invalid" maxlength="100">
+                    <div class="invalid-feedback" th:errors="*{province}"></div>
+                </div>
+                <div class="col-md-2">
+                    <label for="zipcode" class="form-label">Zip Code <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{zipcode}" class="form-control" th:errorclass="is-invalid" maxlength="10">
+                    <div class="invalid-feedback" th:errors="*{zipcode}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Create Project</button>
+            <a th:href="@{/dashboard}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

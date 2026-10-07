@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My Profile')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container mb-5">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <!-- Read-only account facts: role, email and ID can never be changed -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <img th:if="${employee.profilePicturePath != null}" class="avatar-img avatar-lg rounded-circle shadow-sm" alt="My profile picture"
+             th:src="@{/employees/{id}/avatar(id=${employee.id},v=${#strings.substringAfter(employee.profilePicturePath, '/')})}">
+        <i th:unless="${employee.profilePicturePath != null}" class="bi bi-person-circle avatar avatar-lg text-secondary" aria-hidden="true"></i>
+        <div>
+            <h1 class="h3 mb-1" th:text="${employee.name}">Name</h1>
+            <div class="text-muted">
+                <span class="badge text-bg-primary" th:text="${employee.role.label}">Role</span>
+                <span class="ms-2" th:text="${employee.email}">email</span>
+                <span class="ms-2">· Employee ID <span th:text="${employee.id}">1</span></span>
+            </div>
+            <div class="form-text">Role, email and employee ID cannot be changed.</div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <!-- Name -->
+            <form th:action="@{/profile/name}" th:object="${nameForm}" method="post" novalidate class="card shadow-sm mb-4">
+                <div class="card-header fw-semibold">Name</div>
+                <div class="card-body">
+                    <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                    <input type="text" th:field="*{name}" class="form-control" th:errorclass="is-invalid" maxlength="100" required>
+                    <div class="invalid-feedback" th:errors="*{name}"></div>
+                </div>
+                <div class="card-footer bg-white">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Name</button>
+                </div>
+            </form>
+
+            <!-- Password -->
+            <form th:action="@{/profile/password}" th:object="${passwordForm}" method="post" novalidate class="card shadow-sm mb-4">
+                <div class="card-header fw-semibold">Change Password</div>
+                <div class="card-body row g-3">
+                    <div class="col-12">
+                        <label for="currentPassword" class="form-label">Current password <span class="text-danger">*</span></label>
+                        <input type="password" th:field="*{currentPassword}" class="form-control" th:errorclass="is-invalid"
+                               autocomplete="current-password" required>
+                        <div class="invalid-feedback" th:errors="*{currentPassword}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="newPassword" class="form-label">New password <span class="text-danger">*</span></label>
+                        <input type="password" th:field="*{newPassword}" class="form-control" th:errorclass="is-invalid"
+                               autocomplete="new-password" minlength="8" maxlength="72" required>
+                        <div class="invalid-feedback" th:errors="*{newPassword}"></div>
+                        <div class="form-text">At least 8 characters.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="confirmPassword" class="form-label">Confirm new password <span class="text-danger">*</span></label>
+                        <input type="password" th:field="*{confirmPassword}" class="form-control" th:errorclass="is-invalid"
+                               autocomplete="new-password" required>
+                        <div class="invalid-feedback" th:errors="*{confirmPassword}"></div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-key"></i> Change Password</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-lg-6">
+            <!-- Profile picture -->
+            <form th:action="@{/profile/picture}" th:object="${pictureForm}" method="post" enctype="multipart/form-data"
+                  novalidate class="card shadow-sm mb-4">
+                <div class="card-header fw-semibold">Profile Picture</div>
+                <div class="card-body">
+                    <label for="picture" class="form-label">New picture <span class="text-danger">*</span></label>
+                    <input type="file" id="picture" name="picture" class="form-control" accept="image/png,image/jpeg"
+                           th:classappend="${#fields.hasErrors('picture')} ? 'is-invalid'" required>
+                    <div class="invalid-feedback" th:errors="*{picture}"></div>
+                    <div class="form-text">JPG or PNG, at most <span th:text="${maxPictureMb}">2</span> MB. Replaces your current picture.</div>
+                </div>
+                <div class="card-footer bg-white">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-upload"></i> Upload Picture</button>
+                </div>
+            </form>
+
+            <!-- Skills (Tech Engineer only) -->
+            <div th:if="${employee.role.name() == 'TECH'}" class="card shadow-sm mb-4">
+                <div class="card-header fw-semibold">My Skills</div>
+                <div class="card-body">
+                    <ul class="list-inline mb-3">
+                        <li class="list-inline-item" th:each="s : ${employee.skills}">
+                            <form th:action="@{/profile/skills/{id}/remove(id=${s.id})}" method="post" class="d-inline">
+                                <span class="badge text-bg-primary skill-badge">
+                                    <span th:text="${s.skill}">CCNA</span>
+                                    <button type="submit" class="btn-close btn-close-white btn-sm ms-1"
+                                            th:if="${#lists.size(employee.skills) > 1}"
+                                            th:attr="aria-label='Remove skill ' + ${s.skill}" th:title="'Remove ' + ${s.skill}"></button>
+                                </span>
+                            </form>
+                        </li>
+                    </ul>
+                    <p th:if="${#lists.size(employee.skills) == 1}" class="form-text mt-0">You must keep at least one skill.</p>
+
+                    <form th:action="@{/profile/skills}" th:object="${skillForm}" method="post" novalidate>
+                        <label for="skill" class="form-label">Please Assign Your Skills :</label>
+                        <div class="input-group has-validation">
+                            <input type="text" th:field="*{skill}" class="form-control" th:errorclass="is-invalid"
+                                   placeholder="e.g. CCNA" maxlength="100">
+                            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-plus-lg"></i> Add skill</button>
+                            <div class="invalid-feedback" th:errors="*{skill}"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

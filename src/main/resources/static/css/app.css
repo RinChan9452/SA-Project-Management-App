@@ -1,0 +1,69 @@
+body {
+    background-color: #f5f7fb;
+}
+
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 2rem 0;
+}
+
+.auth-card {
+    max-width: 420px;
+}
+
+.auth-card-wide {
+    max-width: 560px;
+}
+
+.text-prewrap {
+    white-space: pre-wrap;
+}
+
+.avatar {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+/* Uploaded profile pictures (F4): same size as the default avatar icon, cropped to a circle */
+.avatar-img {
+    width: 2rem;
+    height: 2rem;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.avatar-nav {
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.avatar-lg {
+    width: 6rem;
+    height: 6rem;
+    font-size: 6rem;
+}
+
+.skill-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.9rem;
+    padding: 0.45em 0.6em;
+    margin-bottom: 0.35rem;
+}
+
+/* F2 notification bell and list */
+.notification-badge {
+    font-size: 0.6rem;
+}
+
+.notification-unread {
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+/* F1 SALE dashboard: project counts by status */
+.status-count:hover {
+    border-color: var(--bs-primary);
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Notifications')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container mb-5" style="max-width: 860px">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h1 class="h3 mb-0"><i class="bi bi-bell"></i> Notifications</h1>
+            <p class="text-muted mb-0">
+                <span th:if="${unreadCount != null and unreadCount > 0}"
+                      th:text="${unreadCount} + (${unreadCount == 1} ? ' unread notification.' : ' unread notifications.')">2 unread.</span>
+                <span th:unless="${unreadCount != null and unreadCount > 0}">You have read all your notifications.</span>
+                Click one to open its project.
+            </p>
+        </div>
+        <form th:if="${unreadCount != null and unreadCount > 0}" th:action="@{/notifications/read-all}" method="post" class="m-0">
+            <button type="submit" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-check2-all"></i> Mark all as read
+            </button>
+        </form>
+    </div>
+
+    <div class="card shadow-sm">
+        <p th:if="${notifications.empty}" class="text-muted p-3 mb-0">You have no notifications yet.</p>
+        <div th:unless="${notifications.empty}" class="list-group list-group-flush">
+            <th:block th:each="n : ${notifications.content}"><form th:replace="~{fragments/layout :: notification(${n})}"></form></th:block>
+        </div>
+    </div>
+
+    <nav th:if="${last > 1}" class="d-flex justify-content-center mt-3" aria-label="Notification pages">
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" th:classappend="${current == 1} ? 'disabled'">
+                <a class="page-link" th:href="@{/notifications(page=${current - 1})}" aria-label="Previous page">&laquo;</a>
+            </li>
+            <li class="page-item disabled"><span class="page-link" th:text="'Page ' + ${current} + ' of ' + ${last}">Page 1 of 2</span></li>
+            <li class="page-item" th:classappend="${current == last} ? 'disabled'">
+                <a class="page-link" th:href="@{/notifications(page=${current + 1})}" aria-label="Next page">&raquo;</a>
+            </li>
+        </ul>
+    </nav>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

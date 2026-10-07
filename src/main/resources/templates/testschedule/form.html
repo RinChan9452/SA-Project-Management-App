@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Set Test Date')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container mb-5">
+    <p class="text-muted mb-1">Project #<span th:text="${project.id}">1</span> · <span th:text="${project.customerName}">Customer</span></p>
+    <h1 class="h3 mb-1">Set Test Date: <span th:text="${project.projectName}">Project</span></h1>
+    <p class="text-muted">Fields marked <span class="text-danger">*</span> are required. Saving moves the project to
+        <strong>Testing</strong> and notifies the Sale in charge, the PM and all assigned engineers
+        (now, and again 1 day before the test).</p>
+
+    <form th:action="@{/projects/{id}/test-schedule(id=${project.id})}" th:object="${form}" method="post" novalidate>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">Customer test</div>
+            <div class="card-body row g-3">
+                <div class="col-md-5">
+                    <label for="testAt" class="form-label">Test date and time <span class="text-danger">*</span></label>
+                    <input type="datetime-local" th:field="*{testAt}" class="form-control" th:errorclass="is-invalid"
+                           th:min="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd''T''HH:mm')}">
+                    <div class="invalid-feedback" th:errors="*{testAt}"></div>
+                    <div class="form-text">Must be in the future.</div>
+                </div>
+                <div class="col-12">
+                    <label for="detail" class="form-label">Test details <span class="text-danger">*</span></label>
+                    <textarea th:field="*{detail}" class="form-control" th:errorclass="is-invalid" rows="5"
+                              maxlength="2000" placeholder="What will be tested, where, who from the customer joins, ..."></textarea>
+                    <div class="invalid-feedback" th:errors="*{detail}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-calendar-check"></i> Save Test Date</button>
+            <a th:href="@{/projects/{id}(id=${project.id})}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

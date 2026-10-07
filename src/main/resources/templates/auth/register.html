@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Register')}"></head>
+<body class="auth-page">
+<main class="container">
+    <div class="card auth-card auth-card-wide shadow-sm mx-auto">
+        <div class="card-body p-4">
+            <h1 class="h4 mb-1">Create your account</h1>
+            <p class="text-muted mb-4">Register as an employee of the company.</p>
+
+            <form th:action="@{/register}" th:object="${form}" method="post" id="registerForm" novalidate>
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name</label>
+                    <input type="text" th:field="*{name}" class="form-control" th:errorclass="is-invalid"
+                           maxlength="100" required>
+                    <div class="invalid-feedback" th:errors="*{name}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="role" class="form-label">Role</label>
+                    <select th:field="*{role}" class="form-select" th:errorclass="is-invalid" required>
+                        <option value="">-- Choose your role --</option>
+                        <option th:each="r : ${roles}" th:value="${r}" th:text="${r.label}">Role</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{role}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" th:field="*{email}" class="form-control" th:errorclass="is-invalid"
+                           autocomplete="username" required>
+                    <div class="form-text">You will use this email to log in.</div>
+                    <div class="invalid-feedback" th:errors="*{email}"></div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" th:field="*{password}" class="form-control" th:errorclass="is-invalid"
+                               autocomplete="new-password" minlength="8" required>
+                        <div class="form-text">At least 8 characters.</div>
+                        <div class="invalid-feedback" th:errors="*{password}"></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="confirmPassword" class="form-label">Confirm Password</label>
+                        <input type="password" th:field="*{confirmPassword}" class="form-control"
+                               th:errorclass="is-invalid" autocomplete="new-password" required>
+                        <div class="invalid-feedback" th:errors="*{confirmPassword}"></div>
+                    </div>
+                </div>
+
+                <!-- Shown only for Tech Engineer (register.js) -->
+                <div id="skillsSection" class="mb-3 p-3 border rounded bg-light">
+                    <label for="skillInput" class="form-label fw-semibold">Please Assign Your Skills :</label>
+                    <div class="input-group">
+                        <input type="text" id="skillInput" class="form-control" placeholder="e.g. CCNA" maxlength="100"
+                               th:classappend="${#fields.hasErrors('skills')} ? 'is-invalid'">
+                        <button type="button" id="addSkillBtn" class="btn btn-outline-primary">
+                            <i class="bi bi-plus-lg"></i> Add skill
+                        </button>
+                    </div>
+                    <div class="text-danger small mt-1" th:if="${#fields.hasErrors('skills')}" th:errors="*{skills}"></div>
+                    <div class="form-text">Add one certificate at a time. Click Submit when you are done.</div>
+                    <ul id="skillList" class="list-inline mt-2 mb-0">
+                        <li class="list-inline-item" th:each="s : *{skills}">
+                            <span class="badge text-bg-primary skill-badge">
+                                <span th:text="${s}">CCNA</span>
+                                <input type="hidden" name="skills" th:value="${s}">
+                                <button type="button" class="btn-close btn-close-white btn-sm ms-1 remove-skill"
+                                        aria-label="Remove skill"></button>
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Submit</button>
+            </form>
+
+            <p class="text-center mt-4 mb-0">
+                Already registered? <a th:href="@{/login}">Log in</a>
+            </p>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:src="@{/js/register.js}"></script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Dashboard')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container mb-5">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h1 class="h3 mb-0">Welcome, <span th:text="${user.name}">Name</span></h1>
+            <p class="text-muted mb-0">You are logged in as <strong th:text="${user.role.label}">Role</strong>.</p>
+        </div>
+        <a th:if="${user.role.name() == 'SALE'}" th:href="@{/projects/new}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Create Project
+        </a>
+    </div>
+
+    <!-- SALE: my projects counted by status; each opens the F3 list with that filter -->
+    <div th:if="${statusCounts != null}" class="row row-cols-2 row-cols-md-3 row-cols-xl-6 g-2 mb-4">
+        <div class="col" th:each="entry : ${statusCounts}">
+            <a class="card h-100 text-decoration-none shadow-sm status-count"
+               th:href="@{/projects(saleId=${user.id},status=${entry.key.name()})}"
+               th:title="'Show my projects in ' + ${entry.key.label}">
+                <div class="card-body py-2 px-3">
+                    <div class="fs-4 fw-semibold text-body" th:text="${entry.value}">0</div>
+                    <span th:replace="~{fragments/layout :: status(${entry.key})}"></span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Every role: my latest unread notifications (F2) -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-bell"></i> Latest notifications
+                <span th:unless="${#lists.isEmpty(latestNotifications)}" class="badge text-bg-primary ms-1"
+                      th:text="${unreadCount}">0</span></span>
+            <a th:href="@{/notifications}" class="small fw-normal">See all</a>
+        </div>
+        <p th:if="${#lists.isEmpty(latestNotifications)}" class="text-muted p-3 mb-0">No new notifications.</p>
+        <div th:unless="${#lists.isEmpty(latestNotifications)}" class="list-group list-group-flush">
+            <th:block th:each="n : ${latestNotifications}"><form th:replace="~{fragments/layout :: notification(${n})}"></form></th:block>
+        </div>
+    </div>
+
+    <!-- SALE: new requirements waiting for my approval (UC07 step 1) -->
+    <div th:if="${toApprove != null}" class="card shadow-sm mb-4 border-warning">
+        <div class="card-header fw-semibold bg-warning-subtle">
+            <i class="bi bi-exclamation-circle"></i> Requirements waiting for my approval
+            <span class="badge text-bg-warning ms-1" th:text="${#lists.size(toApprove)}">0</span>
+        </div>
+        <div class="card-body p-0">
+            <p th:if="${#lists.isEmpty(toApprove)}" class="text-muted p-3 mb-0">No requirement is waiting for your approval.</p>
+            <div th:unless="${#lists.isEmpty(toApprove)}" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>Requirement</th><th>Project</th><th>Priority</th><th>Due</th><th>Added</th><th></th></tr></thead>
+                    <tbody>
+                    <tr th:each="r : ${toApprove}">
+                        <td th:text="${r.title}">Title</td>
+                        <td><a th:href="@{/projects/{id}(id=${r.project.id})}" th:text="${r.project.projectName}">Project</a></td>
+                        <td><span th:replace="~{fragments/layout :: priority(${r.priority})}"></span></td>
+                        <td class="text-nowrap" th:text="${#temporals.format(r.dueDate, 'dd MMM yyyy')}">date</td>
+                        <td class="text-nowrap"><span th:text="${r.createdBy.name}">PM</span><br>
+                            <small class="text-muted" th:text="${#temporals.format(r.createdAt, 'dd MMM yyyy HH:mm')}">date</small></td>
+                        <td class="text-end">
+                            <a th:href="@{/requirements/{id}/decision(id=${r.id})}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-check2-square"></i> Review
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRESALE: projects waiting for my solution (UC02) -->
+    <div th:if="${needSolution != null}" class="card shadow-sm mb-4 border-warning">
+        <div class="card-header fw-semibold bg-warning-subtle">
+            <i class="bi bi-exclamation-circle"></i> Need solution
+            <span class="badge text-bg-warning ms-1" th:text="${#lists.size(needSolution)}">0</span>
+        </div>
+        <div class="card-body p-0">
+            <p th:if="${#lists.isEmpty(needSolution)}" class="text-muted p-3 mb-0">No project is waiting for your solution.</p>
+            <div th:unless="${#lists.isEmpty(needSolution)}" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>ID</th><th>Project</th><th>Customer</th><th>Created</th><th></th></tr></thead>
+                    <tbody>
+                    <tr th:each="p : ${needSolution}">
+                        <td th:text="${p.id}">1</td>
+                        <td><a th:href="@{/projects/{id}(id=${p.id})}" th:text="${p.projectName}">Project</a></td>
+                        <td th:text="${p.customerName}">Customer</td>
+                        <td th:text="${#temporals.format(p.createdAt, 'dd MMM yyyy HH:mm')}">01 Jan 2026</td>
+                        <td class="text-end">
+                            <a th:href="@{/projects/{id}/solution(id=${p.id})}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-file-earmark-arrow-up"></i> Add Solution
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PM: projects waiting for engineers (UC04); any PM may pick one up -->
+    <div th:if="${needEngineers != null}" class="card shadow-sm mb-4 border-warning">
+        <div class="card-header fw-semibold bg-warning-subtle">
+            <i class="bi bi-exclamation-circle"></i> Need engineers
+            <span class="badge text-bg-warning ms-1" th:text="${#lists.size(needEngineers)}">0</span>
+        </div>
+        <div class="card-body p-0">
+            <p th:if="${#lists.isEmpty(needEngineers)}" class="text-muted p-3 mb-0">No project is waiting for engineers.</p>
+            <div th:unless="${#lists.isEmpty(needEngineers)}" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>ID</th><th>Project</th><th>Customer</th><th>Period</th><th></th></tr></thead>
+                    <tbody>
+                    <tr th:each="p : ${needEngineers}">
+                        <td th:text="${p.id}">1</td>
+                        <td><a th:href="@{/projects/{id}(id=${p.id})}" th:text="${p.projectName}">Project</a></td>
+                        <td th:text="${p.customerName}">Customer</td>
+                        <td th:text="${p.startDate != null} ? ${#temporals.format(p.startDate, 'dd MMM yyyy') + ' – ' + #temporals.format(p.endDate, 'dd MMM yyyy')} : '-'">dates</td>
+                        <td class="text-end">
+                            <a th:href="@{/projects/{id}/assign(id=${p.id})}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-person-plus"></i> Assign Engineers
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PM: my projects in Testing; once the customer test is over the PM can add a requirement (UC06) -->
+    <div th:if="${myTesting != null}" class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold"><i class="bi bi-clipboard-check"></i> My projects in Testing
+            <span class="badge text-bg-secondary ms-1" th:text="${#lists.size(myTesting)}">0</span>
+        </div>
+        <div class="card-body p-0">
+            <p th:if="${#lists.isEmpty(myTesting)}" class="text-muted p-3 mb-0">None of your projects is in Testing.</p>
+            <div th:unless="${#lists.isEmpty(myTesting)}" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>ID</th><th>Project</th><th>Customer</th><th>Customer test</th><th></th></tr></thead>
+                    <tbody>
+                    <tr th:each="t : ${myTesting}">
+                        <td th:text="${t.project.id}">1</td>
+                        <td><a th:href="@{/projects/{id}(id=${t.project.id})}" th:text="${t.project.projectName}">Project</a></td>
+                        <td th:text="${t.project.customerName}">Customer</td>
+                        <td class="text-nowrap">
+                            <span th:text="${t.testAt != null} ? ${#temporals.format(t.testAt, 'dd MMM yyyy HH:mm')} : '-'">date</span>
+                            <span th:if="${t.testFinished}" class="badge text-bg-success ms-1">Done</span>
+                            <span th:unless="${t.testFinished}" class="badge text-bg-info ms-1">Upcoming</span>
+                            <small th:if="${t.completeFrom != null and !t.canComplete}" class="text-muted d-block"
+                                   th:text="'Can be completed from ' + ${#temporals.format(t.completeFrom, 'dd MMM yyyy HH:mm')}">from</small>
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <a th:if="${t.testFinished}" th:href="@{/projects/{id}/requirements/new(id=${t.project.id})}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-square"></i> Add Requirement
+                            </a>
+                            <a th:if="${t.canComplete}" th:href="@{/projects/{id}(id=${t.project.id})}" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-flag"></i> Complete Project
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PM: requirements I added and the Sale's decision (UC06 / UC07) -->
+    <div th:if="${myRequirements != null}" class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold"><i class="bi bi-list-check"></i> My requirements</div>
+        <div class="card-body p-0">
+            <p th:if="${#lists.isEmpty(myRequirements)}" class="text-muted p-3 mb-0">You have not added any customer requirement yet.</p>
+            <div th:unless="${#lists.isEmpty(myRequirements)}" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>Requirement</th><th>Project</th><th>Priority</th><th>Due</th><th>Status</th></tr></thead>
+                    <tbody>
+                    <tr th:each="r : ${myRequirements}">
+                        <td th:text="${r.title}">Title</td>
+                        <td><a th:href="@{/projects/{id}(id=${r.project.id})}" th:text="${r.project.projectName}">Project</a></td>
+                        <td><span th:replace="~{fragments/layout :: priority(${r.priority})}"></span></td>
+                        <td class="text-nowrap" th:text="${#temporals.format(r.dueDate, 'dd MMM yyyy')}">date</td>
+                        <td><span th:replace="~{fragments/layout :: requirementStatus(${r.status})}"></span>
+                            <small th:if="${r.rejectReason}" class="text-danger d-block text-prewrap" th:text="'Reason: ' + ${r.rejectReason}">reason</small></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TECH: my assigned projects waiting for a customer test date (UC05) -->
+    <div th:if="${needTestDate != null}" class="card shadow-sm mb-4 border-warning">
+        <div class="card-header fw-semibold bg-warning-subtle">
+            <i class="bi bi-exclamation-circle"></i> Need test date
+            <span class="badge text-bg-warning ms-1" th:text="${#lists.size(needTestDate)}">0</span>
+        </div>
+        <div class="card-body p-0">
+            <p th:if="${#lists.isEmpty(needTestDate)}" class="text-muted p-3 mb-0">No project is waiting for a test date.</p>
+            <div th:unless="${#lists.isEmpty(needTestDate)}" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>ID</th><th>Project</th><th>Customer</th><th>Period</th><th></th></tr></thead>
+                    <tbody>
+                    <tr th:each="p : ${needTestDate}">
+                        <td th:text="${p.id}">1</td>
+                        <td><a th:href="@{/projects/{id}(id=${p.id})}" th:text="${p.projectName}">Project</a></td>
+                        <td th:text="${p.customerName}">Customer</td>
+                        <td th:text="${p.startDate != null} ? ${#temporals.format(p.startDate, 'dd MMM yyyy') + ' – ' + #temporals.format(p.endDate, 'dd MMM yyyy')} : '-'">dates</td>
+                        <td class="text-end">
+                            <a th:href="@{/projects/{id}/test-schedule(id=${p.id})}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-calendar-plus"></i> Set Test Date
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TECH: customer tests still to come on my projects -->
+    <div th:if="${upcomingTests != null}" class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold"><i class="bi bi-calendar-event"></i> Upcoming tests</div>
+        <div class="card-body p-0">
+            <p th:if="${#lists.isEmpty(upcomingTests)}" class="text-muted p-3 mb-0">No upcoming customer tests.</p>
+            <div th:unless="${#lists.isEmpty(upcomingTests)}" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>Test date</th><th>Project</th><th>Customer</th><th>Details</th></tr></thead>
+                    <tbody>
+                    <tr th:each="t : ${upcomingTests}">
+                        <td class="text-nowrap fw-semibold" th:text="${#temporals.format(t.testAt, 'dd MMM yyyy HH:mm')}">date</td>
+                        <td><a th:href="@{/projects/{id}(id=${t.project.id})}" th:text="${t.project.projectName}">Project</a></td>
+                        <td th:text="${t.project.customerName}">Customer</td>
+                        <td class="text-truncate" style="max-width: 20rem" th:text="${t.detail}">details</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Every role: my projects -->
+    <div th:if="${myProjects != null}" class="card shadow-sm">
+        <div class="card-header fw-semibold" th:text="${myProjectsTitle}">My projects</div>
+        <div class="card-body p-0">
+            <p th:if="${#lists.isEmpty(myProjects)}" class="text-muted p-3 mb-0">
+                <span th:if="${user.role.name() == 'SALE'}">You have no projects yet. Click <strong>Create Project</strong> to add one.</span>
+                <span th:if="${user.role.name() == 'PRESALE'}">No other projects.</span>
+                <span th:if="${user.role.name() == 'PM'}">You are not in charge of any project yet. Assign engineers to a waiting project to take it on.</span>
+                <span th:if="${user.role.name() == 'TECH'}">You are not assigned to any project yet.</span>
+            </p>
+            <div th:unless="${#lists.isEmpty(myProjects)}" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr><th>ID</th><th>Project</th><th>Customer</th><th>Status</th><th>Created</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="p : ${myProjects}">
+                        <td th:text="${p.id}">1</td>
+                        <td><a th:href="@{/projects/{id}(id=${p.id})}" th:text="${p.projectName}">Project</a></td>
+                        <td th:text="${p.customerName}">Customer</td>
+                        <td><span th:replace="~{fragments/layout :: status(${p.status})}"></span></td>
+                        <td th:text="${#temporals.format(p.createdAt, 'dd MMM yyyy HH:mm')}">01 Jan 2026</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

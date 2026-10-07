@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Review Requirement')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container mb-5">
+    <p class="text-muted mb-1">Project #<span th:text="${project.id}">1</span> · <span th:text="${project.customerName}">Customer</span></p>
+    <h1 class="h3 mb-1">Review Requirement: <span th:text="${requirement.title}">Title</span></h1>
+    <p class="text-muted">The PM in charge (<span th:text="${project.pm != null} ? ${project.pm.name} : '-'">PM</span>) added this
+        requirement after the customer test. <strong>Approve</strong> sends the project back to <strong>New Project</strong>
+        so the Presale Engineer can update the solution. <strong>Reject</strong> finishes the project.</p>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header fw-semibold d-flex justify-content-between align-items-center gap-2">
+                    <span>Requirement</span>
+                    <span th:replace="~{fragments/layout :: requirementStatus(${requirement.status})}"></span>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Title</dt>
+                        <dd class="col-sm-8" th:text="${requirement.title}">Title</dd>
+                        <dt class="col-sm-4">Detail</dt>
+                        <dd class="col-sm-8 text-prewrap" th:text="${requirement.detail}">Detail</dd>
+                        <dt class="col-sm-4">Priority</dt>
+                        <dd class="col-sm-8"><span th:replace="~{fragments/layout :: priority(${requirement.priority})}"></span></dd>
+                        <dt class="col-sm-4">Customer Due Date</dt>
+                        <dd class="col-sm-8" th:text="${#temporals.format(requirement.dueDate, 'dd MMM yyyy')}">date</dd>
+                        <dt class="col-sm-4">Related Feature</dt>
+                        <dd class="col-sm-8" th:text="${requirement.relatedFeature != null} ? ${requirement.relatedFeature} : '-'">feature</dd>
+                        <dt class="col-sm-4">Added by</dt>
+                        <dd class="col-sm-8"><span th:text="${requirement.createdBy.name}">PM</span>,
+                            <span th:text="${#temporals.format(requirement.createdAt, 'dd MMM yyyy HH:mm')}">date</span></dd>
+                        <dt class="col-sm-4">Attachments</dt>
+                        <dd class="col-sm-8 mb-0">
+                            <span th:if="${#lists.isEmpty(attachments)}" class="text-muted">None</span>
+                            <a th:each="d : ${attachments}" th:href="@{/documents/{id}(id=${d.id})}" class="d-block">
+                                <i class="bi" th:classappend="${d.mime == 'application/pdf'} ? 'bi-file-earmark-pdf text-danger' : 'bi-file-earmark-image text-primary'"></i>
+                                <span th:text="${d.originalName}">file.pdf</span></a>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <form th:action="@{/requirements/{id}/decision(id=${requirement.id})}" th:object="${form}" method="post" novalidate>
+                <input type="hidden" th:field="*{version}">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header fw-semibold">Your decision</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" th:field="*{decision}" value="APPROVED"
+                                       th:errorclass="is-invalid">
+                                <label class="form-check-label" th:for="${#ids.prev('decision')}">
+                                    <strong class="text-success">Approve</strong> — the project goes back to New Project
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" th:field="*{decision}" value="REJECTED"
+                                       th:errorclass="is-invalid">
+                                <label class="form-check-label" th:for="${#ids.prev('decision')}">
+                                    <strong class="text-danger">Reject</strong> — the project is Finished
+                                </label>
+                            </div>
+                            <div class="text-danger small mt-1" th:if="${#fields.hasErrors('decision')}" th:errors="*{decision}"></div>
+                        </div>
+                        <div>
+                            <label for="rejectReason" class="form-label">Reject reason <span class="text-muted">(required when rejecting)</span></label>
+                            <textarea th:field="*{rejectReason}" class="form-control" th:errorclass="is-invalid" rows="3"
+                                      maxlength="1000" placeholder="Why the requirement is rejected; the PM will see this"></textarea>
+                            <div class="invalid-feedback" th:errors="*{rejectReason}"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-square"></i> Save Decision</button>
+                    <a th:href="@{/projects/{id}(id=${project.id})}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- UC07 step 2: the project this requirement belongs to -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold">Project</div>
+                <div class="card-body">
+                    <dl class="mb-0">
+                        <dt>Project</dt>
+                        <dd><a th:href="@{/projects/{id}(id=${project.id})}" th:text="${project.projectName}">Project</a></dd>
+                        <dt>Status</dt>
+                        <dd><span th:replace="~{fragments/layout :: status(${project.status})}"></span></dd>
+                        <dt>Presale in Charge</dt>
+                        <dd th:text="${project.presale.name}">Presale</dd>
+                        <dt>Period</dt>
+                        <dd th:text="${project.startDate != null} ? ${#temporals.format(project.startDate, 'dd MMM yyyy') + ' – ' + #temporals.format(project.endDate, 'dd MMM yyyy')} : '-'">dates</dd>
+                        <dt>Estimated Budget</dt>
+                        <dd th:text="${project.estBudget != null} ? ${#numbers.formatDecimal(project.estBudget, 1, 'COMMA', 2, 'POINT')} : '-'">0.00</dd>
+                        <dt>Customer test</dt>
+                        <dd th:text="${!#lists.isEmpty(testSchedules)} ? ${#temporals.format(testSchedules[0].testAt, 'dd MMM yyyy HH:mm')} : '-'">date</dd>
+                        <dt>Engineers</dt>
+                        <dd class="mb-0">
+                            <span th:if="${#lists.isEmpty(engineers)}" class="text-muted">-</span>
+                            <span th:each="pe, it : ${engineers}" th:text="${pe.employee.name} + (${it.last} ? '' : ', ')">Name</span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

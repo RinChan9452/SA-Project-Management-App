@@ -1,0 +1,13 @@
+# Build output
+target/
+
+# Local H2 database (data/) and uploaded files (uploads/) ARE committed, so the demo data
+# moves to another laptop with git. Only H2's temporary files are ignored.
+data/*.trace.db
+data/*.lock.db
+data/*.temp.db
+
+# IDE
+.idea/
+*.iml
+.vscode/

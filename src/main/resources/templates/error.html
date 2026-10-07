@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!-- Fallback for every error status without its own page in error/ (e.g. 400, 405, 500). Never shows technical details. -->
+<head th:replace="~{fragments/layout :: head(${status != null and status >= 500} ? 'Something went wrong' : 'Request not valid')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container">
+    <div class="card shadow-sm mx-auto" style="max-width: 560px">
+        <div class="card-body p-4 text-center" th:switch="${status != null and status >= 500}">
+            <th:block th:case="true">
+                <i class="bi bi-exclamation-octagon text-danger display-5"></i>
+                <h1 class="h4 mt-2">Something went wrong</h1>
+                <p class="text-muted">The system could not finish your request. Please go back and try again.</p>
+            </th:block>
+            <th:block th:case="*">
+                <i class="bi bi-exclamation-triangle text-warning display-5"></i>
+                <h1 class="h4 mt-2">Request not valid</h1>
+                <p class="text-muted">The link or the submitted data is not valid. Please check it and try again.</p>
+            </th:block>
+            <p class="small text-muted">Error code <span th:text="${status}">400</span></p>
+            <a th:href="@{/dashboard}" class="btn btn-primary">Back to dashboard</a>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

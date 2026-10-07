@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Projects')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container mb-5">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 class="h3 mb-3">Projects</h1>
+
+    <!-- F3: search box + filters (GET, so the URL can be bookmarked and paging keeps the filters) -->
+    <form th:action="@{/projects}" method="get" class="card shadow-sm mb-3" role="search">
+        <div class="card-body row g-2 align-items-end">
+            <div class="col-md-4">
+                <label for="q" class="form-label small text-muted mb-1">Search</label>
+                <input type="search" id="q" name="q" th:value="${search.q}" class="form-control" maxlength="100"
+                       placeholder="Project ID, project name or customer">
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <label for="status" class="form-label small text-muted mb-1">Status</label>
+                <select id="status" name="status" class="form-select">
+                    <option value="">All statuses</option>
+                    <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.label}"
+                            th:selected="${s == search.status}">Status</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <label for="saleId" class="form-label small text-muted mb-1">Sale in Charge</label>
+                <select id="saleId" name="saleId" class="form-select">
+                    <option value="">All Sales</option>
+                    <option th:each="s : ${sales}" th:value="${s.id}" th:text="${s.name}"
+                            th:selected="${s.id == search.saleId}">Sale</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="mine" name="mine" value="true"
+                           th:checked="${search.mine}">
+                    <label class="form-check-label" for="mine">Only my projects</label>
+                </div>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
+                <a th:if="${search.filtered}" th:href="@{/projects}" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <p th:if="${rows.empty and !search.filtered}" class="text-muted p-3 mb-0">There are no projects yet.</p>
+            <p th:if="${rows.empty and search.filtered}" class="text-muted p-3 mb-0">No project matches your search.</p>
+            <div th:unless="${rows.empty}" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr><th>ID</th><th>Project</th><th>Customer</th><th>Sale in Charge</th><th>Status</th><th>Created</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="r : ${rows.content}" th:with="p=${r.project}">
+                        <td th:text="${p.id}">1</td>
+                        <td><a th:href="@{/projects/{id}(id=${p.id})}" th:text="${p.projectName}">Project</a></td>
+                        <td th:text="${p.customerName}">Customer</td>
+                        <td th:text="${p.sale.name}">Sale</td>
+                        <td><span th:replace="~{fragments/layout :: status(${p.status})}"></span></td>
+                        <td th:text="${#temporals.format(p.createdAt, 'dd MMM yyyy')}">01 Jan 2026</td>
+                        <td class="text-end text-nowrap">
+                            <a th:if="${r.canStoreSolution}" th:href="@{/projects/{id}/solution(id=${p.id})}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-file-earmark-arrow-up"></i> Add Solution
+                            </a>
+                            <a th:if="${r.canAssignEngineers}" th:href="@{/projects/{id}/assign(id=${p.id})}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-person-plus"></i> Assign Engineers
+                            </a>
+                            <a th:if="${r.canSetTestDate}" th:href="@{/projects/{id}/test-schedule(id=${p.id})}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-calendar-plus"></i> Set Test Date
+                            </a>
+                            <a th:if="${r.canAddRequirement}" th:href="@{/projects/{id}/requirements/new(id=${p.id})}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-square"></i> Add Requirement
+                            </a>
+                            <a th:if="${r.reviewRequirementId}" th:href="@{/requirements/{id}/decision(id=${r.reviewRequirementId})}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-check2-square"></i> Review Requirement
+                            </a>
+                            <a th:if="${r.canComplete}" th:href="@{/projects/{id}(id=${p.id})}" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-flag"></i> Complete Project
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paging: 20 per page, every link keeps the search and filters -->
+    <div th:unless="${rows.empty}" class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3"
+         th:with="current=${rows.number + 1}, last=${rows.totalPages}">
+        <span class="text-muted small"
+              th:text="|Showing ${rows.number * rows.size + 1}–${rows.number * rows.size + rows.numberOfElements} of ${rows.totalElements} projects|">
+            Showing 1–20 of 45 projects</span>
+        <nav th:if="${last > 1}" aria-label="Project list pages">
+            <ul class="pagination pagination-sm mb-0"
+                th:with="from=${current - 3 > 1 ? current - 3 : 1}, to=${current + 3 < last ? current + 3 : last}">
+                <li class="page-item" th:classappend="${current == 1} ? 'disabled'">
+                    <a class="page-link" th:href="@{${search.url(current - 1)}}" aria-label="Previous page">&laquo;</a>
+                </li>
+                <li th:each="n : ${#numbers.sequence(from, to)}" class="page-item" th:classappend="${n == current} ? 'active'">
+                    <a class="page-link" th:href="@{${search.url(n)}}" th:text="${n}"
+                       th:attr="aria-current=${n == current} ? 'page' : null">1</a>
+                </li>
+                <li class="page-item" th:classappend="${current == last} ? 'disabled'">
+                    <a class="page-link" th:href="@{${search.url(current + 1)}}" aria-label="Next page">&raquo;</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>
